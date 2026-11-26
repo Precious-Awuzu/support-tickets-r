@@ -1,64 +1,35 @@
-# Customer Support Operations & CSAT Analysis (R)
+# What 8,469 support tickets reveal about demand and satisfaction
 
-An end-to-end exploratory data analysis (EDA) of **8,469 customer support tickets** across **17 variables**, designed to identify operational bottlenecks, channel performance gaps, and key drivers of Customer Satisfaction (CSAT).
+Email handled 2,143 tickets and phone handled 2,132. A support manager looking at those queues would see almost the same volume. Would the customer ratings tell a different story? I used R to examine both questions and found that the choice of denominator mattered more than the channel ranking.
 
-**Tech Stack:** `R` • `RStudio` • `tidyverse` (`dplyr`, `ggplot2`, `readr`) • `janitor` • `Git / GitHub`
+## Who gets counted in a satisfaction score?
 
----
+All 2,769 closed tickets had a satisfaction rating. The 2,819 open tickets and 2,881 awaiting a customer response had none. The mean rating of **2.99 out of 5** therefore describes about a third of the file. A team relying on that number alone would miss every customer still waiting for an outcome.
 
-## 1. Business Problem (The Why)
-High-volume customer support teams manage thousands of incoming requests across multiple channels simultaneously, making it difficult to distinguish isolated complaints from systemic friction. Without structured visibility into ticket drivers and post-resolution satisfaction, operations teams risk misallocating agent capacity and overlooking high-churn pain points.
+| Channel | Tickets |
+| --- | ---: |
+| Email | 2,143 |
+| Phone | 2,132 |
+| Social media | 2,121 |
+| Chat | 2,073 |
 
-**Core Questions Investigated:**
-* Which issue categories and product lines generate the highest support volume?
-* How are incoming tickets distributed across channels and priority tiers?
-* Where are Customer Satisfaction (CSAT) scores strongest and weakest across resolved tickets?
+Chat had the highest mean among rated tickets (3.083). Before changing how cases are routed, I would compare similar issues and priorities across channels and check the proportion closed in each. Ticket counts alone also leave out handling time, which matters for staffing.
 
----
+## Where I would investigate first
 
-## 2. Methodology & Data Workflow (The How)
-Using a reproducible script (`analysis.R`), raw ticket records from `customer_support_tickets.csv` were processed through a three-stage analytical workflow:
+Refund requests (1,752) and technical issues (1,747) were the two largest categories, separated by only five tickets. I would sample cases from both queues to find out what customers repeatedly needed help with and which requests required a second contact. That would give a team a basis for choosing between clearer refund updates and better troubleshooting guidance.
 
-1. **Data Cleaning & Auditing (`janitor`, `dplyr`):**
-   * Standardized all 17 column headers into `snake_case` using `janitor::clean_names()`.
-   * Audited missingness across `customer_satisfaction_rating`, identifying a key structural rule: **100% of CSAT ratings (2,769 records) belong to Closed tickets**, while the remaining **5,700 Open or Pending tickets** are unrated.
-2. **Multi-Dimensional Aggregation (`dplyr`):**
-   * Segmented ticket volume and mean/median CSAT across **ticket types**, **support channels**, **priority levels** (ordered logically from *Low* to *Critical* via `factor()`), and **purchased products**.
-3. **Data Visualization (`ggplot2`):**
-   * Engineered publication-ready bar charts exported at 300 DPI (`tickets_by_channel.png`, `tickets_by_priority.png`, `top_10_products.png`) to communicate demand distribution and product hotspots clearly to non-technical stakeholders.
+![Ticket volume across the four support channels](tickets_by_channel.png)
 
----
+## Inspect or run the analysis
 
-## 3. Key Findings & Recommendations (The What)
+The [R script](analysis.R) cleans the column names, counts issue types, calculates channel-level satisfaction for rated tickets, and exports three charts. The [priority breakdown](tickets_by_priority.png) and [ten most frequently reported products](top_10_products.png) show two other ways to examine the queue. The repository includes the [analytical dataset](customer_support_tickets.csv). Its collection method and organisation are undocumented, which limits generalisation to a live service.
 
-| Metric / Dimension | Key Finding | Operational Takeaway |
-| :--- | :--- | :--- |
-| **Ticket Volume by Type** | **Refund requests (1,752)** and **Technical issues (1,747)** lead volume, followed by Cancellation (1,695), Product (1,641), and Billing (1,634). | Prioritize self-service troubleshooting guides and automated refund tracking to deflect top-volume queues. |
-| **CSAT by Issue Type** | Overall mean CSAT is **2.99 / 5.0** (median **3.0**). **Refund requests (2.935)** and **Technical issues (2.959)** score lowest, while **Cancellations (3.029)** and **Billing (3.028)** score highest. | High-volume technical and refund workflows correlate with lower satisfaction and warrant targeted SLA review. |
-| **Channel Performance** | Volume is evenly split across **Email (2,143)**, **Phone (2,132)**, **Social Media (2,121)**, and **Chat (2,073)**, yet **Chat leads CSAT at 3.083**. | Real-time resolution on Chat drives higher customer satisfaction; consider routing complex technical inquiries to live chat. |
-| **Urgency & Product Hotspots** | **Medium (2,192)** and **Critical (2,129)** tickets represent **51.0%** of total demand. **Canon EOS (240)**, **GoPro Hero (228)**, and **Nest Thermostat (225)** generate the most tickets. | Align specialist agent coverage with high-ticket hardware lines and audit product documentation for top-3 devices. |
+From the repository root, run:
 
----
+```bash
+Rscript -e 'install.packages(c("tidyverse", "janitor"), repos="https://cloud.r-project.org")'
+Rscript analysis.R
+```
 
-## 4. Visual Outputs
-
-### Support Tickets by Channel
-![Support Tickets by Channel](tickets_by_channel.png)
-
-### Support Tickets by Priority Level
-![Support Tickets by Priority Level](tickets_by_priority.png)
-
-### Top 10 Products by Support Ticket Volume
-![Top 10 Products by Support Ticket Volume](top_10_products.png)
-
----
-
-## 5. Repository Structure
-```text
-support-tickets-r/
-├── analysis.R                    # Reproducible R script for cleaning, aggregation, and plotting
-├── customer_support_tickets.csv  # Source dataset (8,469 records, 17 variables)
-├── tickets_by_channel.png        # Ticket volume distribution across 4 support channels
-├── tickets_by_priority.png       # Ticket counts ordered from Low to Critical priority
-├── top_10_products.png           # Top 10 products generating customer support volume
-└── README.md                     # Project documentation and executive summary
+To inspect the channel results in an R session, run `source("analysis.R")` and print `channel_summary`.
